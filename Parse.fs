@@ -1,6 +1,7 @@
 namespace Bio
 
 open FParsec
+open System.IO
 
 module Type =
     type Dna = A | C | G | T
@@ -24,15 +25,17 @@ module Parse =
     open Type
     let ws = spaces
     let int = pint32
+    let nl = pchar '\n'
     
     let int_ws : Parser<int32,unit> = pint32 .>> ws
 
     let nucleotide: (CharStream<unit> -> Reply<char>) = anyOf "ACGT"
     let nucleotideD = nucleotide |>> readDna
     let pDNA = many nucleotide
-    let pDNAD = many nucleotideD
-    let strands = ws >>. (sepBy1 pDNA (pchar '\n'))
-    let strandsD = ws >>. (sepBy1 pDNAD (pchar '\n'))
+    let pDNAD = many1 nucleotideD .>> (opt nl)
+    let strands = ws >>. (sepBy1 pDNA nl)
+    let strandsD = ws >>. many pDNAD // .>> ('\n' |> pchar |> opt)
+    // let strandsD = ws >>. (sepBy1 pDNAD nl) // .>> ('\n' |> pchar |> opt)
     let nums: Parser<int32 list,unit> = sepBy1 int (pchar ' ')
     
     let test p str =
@@ -43,4 +46,26 @@ module Parse =
 
 module Utils =
     let kmers = Seq.windowed
+    let rec init = function
+        | h :: [] -> []
+        | h :: tl -> h :: init tl
+        | _ -> failwith "Empty list."
+            
+    let appFname fn suff =
+        let fbase = Path.GetFileNameWithoutExtension fn
+        let fext = Path.GetExtension fn
+        let fdir = Path.GetDirectoryName fn
+        let fn2 = String.concat "" [| fbase; suff; fext |]
+        Path.Combine(fdir, fn2)
+            
+    let readWrite pathin parser f =
+        printfn "Hi"
+        let pathout = appFname pathin ".out"
+        let textin = File.ReadAllText(pathin)
+        match run parser textin with
+        | Success(parsed, _, _) ->
+            let res = f parsed
+            File.WriteAllText(pathout, res)
+            printfn "Answer written to %s" pathout
+        | Failure _ -> failwith "Invalid parse" 
     

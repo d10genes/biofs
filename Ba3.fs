@@ -21,7 +21,12 @@ module Ba3a =
             printfn "Answer written to %s" pathout
         | Failure _ -> failwith "Invalid parse"
 
+module Ba3b =
+    let ppath = strandsD
 
-    // compositionK k dna |> Set.map ds2str |> String.concat "\n"
+    let recon xss =
+        let fst = xss |> List.head
+        let rst = xss |> List.tail |> List.map List.last 
+        fst @ rst
         
-    // compositionKprob k dna  
+    let Ba3b_main () = readWrite "data/ch3/path.txt" ppath (recon >> dl2str)

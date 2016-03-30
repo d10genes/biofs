@@ -1,56 +1,85 @@
-
-// #load FParsec
-// let pcomp1 = nums .>>. strands
-// let pcomp = int_ws .>>. int_ws .>>. strands
-
 #I "./packages/FParsec/lib/net40-client/"
 #r "./packages/FParsec/lib/net40-client/FParsecCS.dll"
 #r "./packages/FParsec/lib/net40-client/FParsec.dll"
 #load "./Parse.fs"
-#load "./Ba3.fs"
-open FParsec
 open Bio.Parse
 open Bio.Type
 open Bio.Utils
-open Ba3.Ba3a
+#load "./Ba3.fs"
+open Ba3.Ba3b
+open FParsec
+open System.IO
+
+// let nl = pchar '\n'
+let inp = """ATGCG
+GCATG
+CATGC
+AGGCA
+GGCAT
+"""
+
+let pref = init
+let suff = List.tail
+
+run (strandsD) inp
+
+    
+
+run (strandsD) inp
+let (Success((dnas), _, _)) = run strandsD inp
+
+dnas |> recon |> dl2str
+
+readWrite "data/ch3/path.txt" ppath (recon >> dl2str)
+readWrite "data/ch3/rosalind_ba3b.txt" ppath (recon >> dl2str)
+readWrite "data/ch3/dataset_198_3.txt" ppath (recon >> dl2str)
 
 
-let inp = """5
-CAATCCAAC"""
-let (Success((k, dna), _, _)) = run pcomp inp
-dna
 
-let compositionK k dna = 
-    k, dna ||> kmers |> Set.ofSeq
+// let a = "ab\nab\n"
+// let trynl = '\n' |> pchar |> attempt
+// let chars : (CharStream<unit> -> Reply<char>) = noneOf "\n"
+// let line = many1 chars
+// let lines = sepBy1 line trynl
+// // let lines = sepBy1 line (attempt (pchar '\n'))
+// // let lines = sepBy1 line (attempt <| pchar <| '\n')
+// run  (lines .>> (pchar '\n')) a
 
-let compositionK k = 
-    kmers k >> Set.ofSeq
-
-compositionK2 k dna
-compositionK2 k dna
-    |> Set.map ds2str |> String.concat "\n"  
-
-let compositionKprob k = 
-    compositionK k >> Set.map ds2str >> String.concat "\n"  
-    // compositionK k dna |> Set.map ds2str |> String.concat "\n"
-        
-compositionKprob k dna  
-compositionK k dna // |> Set.map ds2str |> String.concat "\n"
-dna
-List.map showDna dna
-let pcomp = int_ws .>>. pDNAD
-let (Success((k, dna), _, _)) = run pcomp inp
+let a = "ab\nab"
+let chars : (CharStream<unit> -> Reply<char>) = noneOf "\n"
+let nl = pchar '\n'
+let line = many1 chars .>> (opt nl)
+let lines = many1 line
+// let lines = sepBy1 line nl
+run  (lines) a
+run  (line) "ab\n"
 
 
 
-let s = System.IO.File.ReadAllText("data/ch3/string_composition.txt")
-let (Success((k, dna), _, _)) = run pcomp s
-let res = compositionKshow k dna
 
-System.IO.File.WriteAllText("data/ch3/string_composition_out.txt", res) 
+
+
+
+
+
+
+#load "./Parse.fs"
+open Bio.Parse
+let f1 = recon >> dl2str
+readWrite "data/ch3/rosalind_ba3b.txt" ppath f1
+readWrite "data/ch3/rosalind_ba3b.txt" ppath (recon >> dl2str)
+
+let fin = "data/ch3/string_composition.txt"
+appFname fin ".out"
+readWrite 
+let a = [1;2;3]
+let b = [1;2;3]
+// a @ b
+
+File.WriteAllText("data/ch3/string_composition_out.txt", res) 
 run pcomp s
-s
 d2str dna
 
 ba3a_main "data/ch3/string_composition.txt" "data/ch3/string_composition_out.txt"
 ba3a_main "data/ch3/rosalind_ba3a.txt" "data/ch3/rosalind_ba3a_out.txt"
+ba3a_main "data/ch3/dataset_197_3.txt" "data/ch3/dataset_197_3_out.txt"
