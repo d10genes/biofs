@@ -45,6 +45,8 @@ module Parse =
 
 
 module Utils =
+    let (&&&) f g xs = (List.map f xs, List.map g xs)
+
     let kmers = Seq.windowed
     let rec init = function
         | h :: [] -> []
@@ -67,5 +69,10 @@ module Utils =
             let res = f parsed
             File.WriteAllText(pathout, res)
             printfn "Answer written to %s" pathout
-        | Failure _ -> failwith "Invalid parse" 
+        | Failure _ -> failwith "Invalid parse"
+            
+    let rec cartesian = function
+        | [] -> Seq.singleton []
+        | L::Ls -> cartesian Ls |> Seq.collect (fun c -> L |> Seq.map (fun x->x::c))
+
     
