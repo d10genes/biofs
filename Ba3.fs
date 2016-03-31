@@ -38,9 +38,10 @@ module Ba3c =
         seq {for i, x in List.indexed xs do
                 for j, y in List.indexed ys
                     do if y = x then yield i, j }
-
+    let ff f g xs = (List.map f xs, List.map g xs)
     let mkAlst dnas =
-        let prefs, suffs = (pref &&& suff) dnas
+        let prefs, suffs = (ff pref suff) dnas
+        // let prefs, suffs = (pref &&& suff) dnas
         let ixs = matchIxs suffs prefs
         let dnaa = Array.ofList dnas
         let alst = [ for i, j in ixs -> dnaa.[i], dnaa.[j] ]
@@ -53,5 +54,19 @@ module Ba3c =
 
     let Ba3c_main () = readWrite "data/ch3/rosalind_ba3c.txt"
                         strandsD (mkAlst >> show_alst)
+
+module Ba3d =
+    let pdbruijn = int_ws .>>. pDNAD
+    let presuf x = (init x, List.tail x)
+
+    let grpDBG (k, dna) =
+        kmerl k dna |> List.ofSeq |> List.map presuf
+        |> List.sort |> List.groupBy fst
+
+    let dedupeTup x = (fst &&& (snd >> List.map snd)) x
+    let showTup k = k |> (dl2str *** (List.map dl2str >> String.concat ","))
+                    |> (fun (x, y) -> String.concat " -> " [|x; y|])
+    let showTups ks = List.map showTup ks |> String.concat "\n"
+    let solveDbg vals = grpDBG vals |> List.map dedupeTup |> showTups
 
 
