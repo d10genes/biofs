@@ -78,3 +78,17 @@ module Utils =
         | [] -> Seq.singleton []
         | L::Ls -> cartesian Ls |> Seq.collect (fun c -> L |> Seq.map (fun x->x::c))
 
+
+module deBruijn =
+    open Type
+    open Utils
+
+    let presuf x = (init x, List.tail x)
+    let grpDBG kms =
+        kms |> List.ofSeq |> List.map presuf
+        |> List.sort |> List.groupBy fst
+
+    let dedupeTup x = (fst &&& (snd >> List.map snd)) x
+    let showTup k = k |> (dl2str *** (List.map dl2str >> String.concat ","))
+                    |> (fun (x, y) -> String.concat " -> " [|x; y|])
+    let showTups ks = List.map showTup ks |> String.concat "\n"

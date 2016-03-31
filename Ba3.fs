@@ -56,17 +56,21 @@ module Ba3c =
                         strandsD (mkAlst >> show_alst)
 
 module Ba3d =
+    // Construct De Bruijn Graph from DNA string
+    open Bio.deBruijn
     let pdbruijn = int_ws .>>. pDNAD
-    let presuf x = (init x, List.tail x)
 
-    let grpDBG (k, dna) =
-        kmerl k dna |> List.ofSeq |> List.map presuf
-        |> List.sort |> List.groupBy fst
+    // let solveDbg  = grpDBG vals |> List.map dedupeTup |> showTups
+    let solveDbg (k, dna) = kmerl k dna |> grpDBG |> List.map dedupeTup |> showTups
 
-    let dedupeTup x = (fst &&& (snd >> List.map snd)) x
-    let showTup k = k |> (dl2str *** (List.map dl2str >> String.concat ","))
-                    |> (fun (x, y) -> String.concat " -> " [|x; y|])
-    let showTups ks = List.map showTup ks |> String.concat "\n"
-    let solveDbg vals = grpDBG vals |> List.map dedupeTup |> showTups
+    let Ba3d_main () = readWrite "data/ch3/rosalind_ba3d2.txt" pdbruijn (solveDbg)
 
 
+module Ba3e =
+    // Construct De Bruijn Graph from kmers
+    open Bio.deBruijn
+
+    // let solveDbg  = grpDBG vals |> List.map dedupeTup |> showTups
+    let solveDbg dnas = dnas |> grpDBG |> List.map dedupeTup |> showTups
+
+    let Ba3e_main () = readWrite "data/ch3/rosalind_ba3e.txt" strandsD (solveDbg)
