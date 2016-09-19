@@ -12,33 +12,35 @@ open FParsec
 open System.IO
 
 
-readWrite "data/ch3/dataset_200_7.txt" strandsD (solveDbg)
-
-
-Ba3e_main ()
-
-let inp = """GAGG
-CAGG
-GGGG
-GGGA
-CAGG
-AGGG
-GGAG
+let inp = """0 -> 3
+1 -> 0
+2 -> 1,6
+3 -> 2
+4 -> 2
+5 -> 4
+6 -> 5,8
+7 -> 9
+8 -> 7
+9 -> 6
 """
 
-let (Success((vals), _, _)) = run strandsD inp
-vals
+let pEulCycLine = int .>> pstring " -> " .>>. (sepBy int (pchar ','))
+// run pEulCycLine "14 -> 3"  // Success: (14, [3])
+// run pEulCycLine "14 -> 30,23"  // Success: (14, [30; 23])
+let pEulCyc = sepEndBy1 pEulCycLine nl
 
-vals |> grpDBG |> List.map dedupeTup |> showTups
+let tupsL2eL xs =
+    let rec tupL2El = function
+        | h, (y :: ys) -> (h, y) :: tupL2El (h, ys)
+        | h, [] -> []
+    List.concat (List.map tupL2El xs)
 
-let k, dna = vals
+let (Success((vals), _, _)) = run (pEulCyc |>> tupsL2eL) inp
 
 
-let kms = kmerl k dna
-let km = Seq.head kms
-let kk = kms |> List.ofSeq |> List.map presuf |> List.sort |> List.groupBy fst
 
 
+readWrite "data/ch3/dataset_200_7.txt" strandsD (solveDbg)
 
 
 
