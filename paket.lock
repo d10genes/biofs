@@ -1,5 +1,5 @@
 NUGET
   remote: https://www.nuget.org/api/v2
-  specs:
     FAKE (4.22.8)
     FParsec (1.0.2)
+    NUnit (3.4.1)

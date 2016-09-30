@@ -1,6 +1,7 @@
 #I "./packages/FParsec/lib/net40-client/"
 #r "./packages/FParsec/lib/net40-client/FParsecCS.dll"
 #r "./packages/FParsec/lib/net40-client/FParsec.dll"
+#r "packages/NUnit/lib/net40/nunit.framework.dll"
 #load "./Parse.fs"
 open Bio.Parse
 open Bio.Type
@@ -187,6 +188,18 @@ let eulerCycle (emap_: EdgeMap<'a>) =
             whileCycle (splice path' path) emap'
     let rp, re = eulerCycleR None emap_ [] []
     whileCycle rp re
+
+
+
+open NUnit.Framework
+[<Test>]
+let emTest = [
+        (0, set [(0, 3)]);
+        (1, set [(1, 0); (1, 5)]); (2, set [(2, 1); (2, 4)]);
+        (3, set [(3, 2)]); (4, set [(4, 2)]); (5, set [(5, 1)])] |> Map.ofList
+let pTest, _ = eulerCycle emTest
+let ``this should be cycle``() =
+    Assert.AreEqual(pTest, [0; 3; 2; 4; 2; 1; 5; 1; 0])
 
 // let p_, e_ = eulerCycle em
 let p_, e_ = eulerCycle em
