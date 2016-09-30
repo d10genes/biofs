@@ -126,6 +126,7 @@ let logx x = if (printfn "\t> %A" x) = () then x else x
 // let (<!>) x = logx x
 
 let unrollEmap (emap: EdgeMap<'a>): EdgeSet<'a> = emap |> Map.toSeq |> Seq.map snd |> Seq.reduce Set.union
+let emptyEmap (emap:EdgeMap<'a>): bool = emap |> unrollEmap |> Set.isEmpty
 
 /// Clear keys with corresponding empty sets.
 let cleanMap (em: EdgeMap<'a>): EdgeMap<'a> = Map.filter (fun _ y -> y |> Set.isEmpty |> not)  em
@@ -145,26 +146,49 @@ let randCycle (start: 'a option) (emap: EdgeMap<'a>) =
         | None -> (em, node :: path)
     let retem, retpath = randCycleR emap [] startNode
     retem, List.rev retpath
+let em = tupsL2eM rawvals2
 
+/// Insert cycle `subl` into list. Both `subl` and list
+/// must begin and end with same element
+let rec splice subl = function
+    | [] -> []
+    | x :: xs ->
+        if x = List.head subl
+        then subl @ xs
+        else x :: splice subl xs
+
+// splice [1; 5; 1] [0; 3; 2; 4; 2; 1; 0] = [0; 3; 2; 4; 2; 1; 5; 1; 0]
 
 let eulerCycle (emap_: EdgeMap<'a>) =
     let rec eulerCycleR startM emap before after =
         let emap', path = randCycle startM emap
         let explored, unusedNode, unseen = until (em2Src emap').Contains path // (path |> logx)
-        let _, _, _ = (logx explored), (logx unusedNode), (logx unseen)
+        printfn "Before: %A\nAfter: %A" before after
+        let _, _, _, _ = (logx path), (logx explored), (logx unusedNode), (logx unseen)
         match unusedNode with
             // |> logx with
-        | (Some n) -> eulerCycleR (Some n) emap' (before @ explored) (unseen @ after)
+        | (Some n) ->
+            printfn "Some: %A loop" n
+            eulerCycleR unusedNode emap' (before @ explored) (unseen @ after)
         | None ->
             let retPath = before @ path @ after
-            if emap' |> unrollEmap |> Set.isEmpty
-                then retPath, emap'
-                else retPath, emap'
-                // else eulerCycleR (logx None) emap' before (path @ after)
+            printfn "None loop"
+            retPath, emap'
+            // if emptyEmap emap'
+            //     then retPath, emap'
+            //     // else retPath, emap'
+            //     else eulerCycleR None emap' before (path @ after)
 
-    eulerCycleR None emap_ [] []
+    let rec whileCycle path emap  =
+        if emptyEmap emap
+        then path, emap
+        else
+            let path', emap' = eulerCycleR None emap [] []
+            whileCycle (splice path' path) emap'
+    let rp, re = eulerCycleR None emap_ [] []
+    whileCycle rp re
 
-let em = tupsL2eM rawvals2
+// let p_, e_ = eulerCycle em
 let p_, e_ = eulerCycle em
 unrollEmap e_
 
