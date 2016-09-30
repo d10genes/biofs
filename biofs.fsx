@@ -51,6 +51,7 @@ type EdgeList<'a> = Edge<'a> list
 type EdgeSet<'a when 'a: comparison> = Set<Edge<'a>>
 type EdgeMap<'a when 'a: comparison> = Map<'a, Set<Edge<'a>>>
 
+
 let src ((s, _): Edge<'a>): 'a = s
 let snk ((_, k): Edge<'a>): 'a  = k
 // type EdgeMap<'a,'b when 'a : comparison> = Map<'a, Set<'a>>
@@ -72,6 +73,7 @@ let tupsL2eM (xs: ('a * 'a list) list): EdgeMap<'a> =
     let tupL2Em (h, ys) =
         (h, (Set.map (fun x -> (h, x)) (Set.ofList ys)))
     xs |> List.map tupL2Em |> Map.ofList
+let pEulCycMap = pEulCyc |>> tupsL2eM
 
 let remove (emap: EdgeMap<'a>) (start, fin): EdgeMap<'a> =
     let edges = emap.Item start
@@ -144,11 +146,13 @@ let randCycle (start: 'a option) (emap: EdgeMap<'a>) =
             |> chooseEdge with
         | Some (edge: Edge<'a>) ->
             randCycleR (remove em edge) (src edge:: path) (snk edge)
-        | None -> (em, node :: path)
-    let retem, retpath = randCycleR emap [] startNode
-    retem, List.rev retpath
+        | None -> (node :: path, em)
+    let retpath, retem = randCycleR emap [] startNode
+    (List.rev retpath), retem
 let em = tupsL2eM rawvals2
 
+let (Success((et), _, _)) = run pEulCycMap inp2
+et
 /// Insert cycle `subl` into list. Both `subl` and list
 /// must begin and end with same element
 let rec splice subl = function
@@ -161,35 +165,14 @@ let rec splice subl = function
 // splice [1; 5; 1] [0; 3; 2; 4; 2; 1; 0] = [0; 3; 2; 4; 2; 1; 5; 1; 0]
 
 let eulerCycle (emap_: EdgeMap<'a>) =
-    let rec eulerCycleR startM emap before after =
-        let emap', path = randCycle startM emap
-        let explored, unusedNode, unseen = until (em2Src emap').Contains path // (path |> logx)
-        printfn "Before: %A\nAfter: %A" before after
-        let _, _, _, _ = (logx path), (logx explored), (logx unusedNode), (logx unseen)
-        match unusedNode with
-            // |> logx with
-        | (Some n) ->
-            printfn "Some: %A loop" n
-            eulerCycleR unusedNode emap' (before @ explored) (unseen @ after)
-        | None ->
-            let retPath = before @ path @ after
-            printfn "None loop"
-            retPath, emap'
-            // if emptyEmap emap'
-            //     then retPath, emap'
-            //     // else retPath, emap'
-            //     else eulerCycleR None emap' before (path @ after)
-
     let rec whileCycle path emap  =
         if emptyEmap emap
         then path, emap
         else
-            let path', emap' = eulerCycleR None emap [] []
+            let path', emap' = randCycle None emap
             whileCycle (splice path' path) emap'
-    let rp, re = eulerCycleR None emap_ [] []
+    let rp, re = randCycle None emap_
     whileCycle rp re
-
-
 
 open NUnit.Framework
 [<Test>]
@@ -197,28 +180,20 @@ let emTest = [
         (0, set [(0, 3)]);
         (1, set [(1, 0); (1, 5)]); (2, set [(2, 1); (2, 4)]);
         (3, set [(3, 2)]); (4, set [(4, 2)]); (5, set [(5, 1)])] |> Map.ofList
-let pTest, _ = eulerCycle emTest
+let pTest, _ = eulerCycle2 emTest
 let ``this should be cycle``() =
     Assert.AreEqual(pTest, [0; 3; 2; 4; 2; 1; 5; 1; 0])
 
 // let p_, e_ = eulerCycle em
 let p_, e_ = eulerCycle em
-unrollEmap e_
 
-// [0; 3; 2; 4; 2; 1; 0]
-// [0; 3; 1; 5; 1; 2; 4; 2; 1; 0]
+let solveEulerCycle em =
+    let path, _ = eulerCycle em
+    System.String.Join("->", (List.map (fun i -> i.ToString()) path))
+    // System.String.Join("->", (List.map (fun ->) path))
 
-// let em1, path1 = randCycle None em
-// let unusedSrcs1 = em2Src em1
-// let unex1, expl1::rst1 = until unusedSrcs1.Contains path1
 
-// let em2, path2 = randCycle (Some expl1) em1
-// let unusedSrcs2 = em2Src em2
-// let unex2, expl2::rst2 = until unusedSrcs2.Contains path1
-
-let ues = em |> Map.toSeq |> Seq.map snd |> Seq.reduce (+)
-
-readWrite "data/ch3/dataset_200_7.txt" strandsD (solveDbg)
+readWrite "data/ch3/rosalind_ba3fa.txt" pEulCycMap (solveEulerCycle)
 
 
 
