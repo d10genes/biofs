@@ -10,7 +10,7 @@ module Ba3a =
         kmers k >> Set.ofSeq
     let compositionKshow k =
         compositionK k >> Set.map ds2str >> String.concat "\n"
-    let pcomp = int_ws .>>. pDNAD
+    let pcomp = intWs .>>. pDNAD
 
     let ba3a_main pathin pathout =
         let sin = System.IO.File.ReadAllText(pathin)
@@ -58,7 +58,7 @@ module Ba3c =
 module Ba3d =
     // Construct De Bruijn Graph from DNA string
     open Bio.deBruijn
-    let pdbruijn = int_ws .>>. pDNAD
+    let pdbruijn = intWs .>>. pDNAD
 
     // let solveDbg  = grpDBG vals |> List.map dedupeTup |> showTups
     let solveDbg (k, dna) = kmerl k dna |> grpDBG |> List.map dedupeTup |> showTups
@@ -74,3 +74,14 @@ module Ba3e =
     let solveDbg dnas = dnas |> grpDBG |> List.map dedupeTup |> showTups
 
     let Ba3e_main () = readWrite "data/ch3/rosalind_ba3e.txt" strandsD (solveDbg)
+
+
+module Ba3f =
+    open Bio.Euler
+
+    let solveEulerCycle em =
+        let path, _ = eulerCycle em
+        System.String.Join("->", (List.map (fun i -> i.ToString()) path))
+
+    let Ba3fMain () = readWrite "data/ch3/rosalind_ba3fa.txt" pEulCycMap (solveEulerCycle)
+

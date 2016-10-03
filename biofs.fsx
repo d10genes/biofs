@@ -7,6 +7,7 @@ open Bio.Parse
 open Bio.Type
 open Bio.Utils
 open Bio.deBruijn
+open Bio.Euler
 #load "./Ba3.fs"
 open Ba3.Ba3e
 open FParsec
@@ -36,20 +37,14 @@ let inp2 = """0 -> 3
 type UserState = unit // doesn't have to be unit, of course
 type Parser<'t> = Parser<'t, UserState>
 
-let str s = pstring s
-let sepList : Parser<_> = between (str "[") (str "]") (sepBy pint32 (str ";"))
-
 let (p: Parser<_> ) = sepBy int (pchar ',')
 let pEulCycLine : Parser<_> = int .>> pstring " -> " .>>. (sepBy int (pchar ','))
+let pEulCyc = sepEndBy1 pEulCycLine nl
 // run pEulCycLine "14 -> 3"  // Success: (14, [3])
 // run pEulCycLine "14 -> 30,23"  // Success: (14, [30; 23])
-let pEulCyc = sepEndBy1 pEulCycLine nl
 // run pEulCyc inp
 
-type Edge<'a> = ('a * 'a)
-type EdgeList<'a> = Edge<'a> list
-type EdgeSet<'a when 'a: comparison> = Set<Edge<'a>>
-type EdgeMap<'a when 'a: comparison> = Map<'a, Set<Edge<'a>>>
+
 
 
 let src ((s, _): Edge<'a>): 'a = s
