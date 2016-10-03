@@ -178,3 +178,14 @@ module Euler =
                 whileCycle (splice path' path) emap'
         let rp, re = randCycle None emap_
         whileCycle rp re
+
+    module EulerTest =
+        open NUnit.Framework
+        [<Test>]
+        let emTest = [
+                (0, set [(0, 3)]);
+                (1, set [(1, 0); (1, 5)]); (2, set [(2, 1); (2, 4)]);
+                (3, set [(3, 2)]); (4, set [(4, 2)]); (5, set [(5, 1)])] |> Map.ofList
+        let pTest, _ = eulerCycle emTest
+        let ``this should be cycle``() =
+            Assert.AreEqual(pTest, [0; 3; 2; 4; 2; 1; 5; 1; 0])
