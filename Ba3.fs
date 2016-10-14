@@ -77,6 +77,7 @@ module Ba3e =
 
 
 module Ba3f =
+    // solve Eulerian cycle
     open Bio.Euler
 
     let solveEulerCycle em =
@@ -84,4 +85,20 @@ module Ba3f =
         System.String.Join("->", (List.map (fun i -> i.ToString()) path))
 
     let Ba3fMain () = readWrite "data/ch3/rosalind_ba3fa.txt" pEulCycMap (solveEulerCycle)
+    let Ba3fMainFn fn = readWrite fn pEulCycMap (solveEulerCycle)
 
+
+// Doesn't work!
+// 1. choose node where outdegree > indegree
+// 2. choose edge that won't disconnect the graph
+//     - first need algorithm to detect connected graph
+module Ba3g =
+    open Bio.Euler
+    open Bio.EulerPath
+    let solveEulerPath tl =
+        let path = eulerPath tl
+        System.String.Join("->", (List.map (fun i -> i.ToString()) (path)))
+
+
+    // let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCycMap (solveEulerPath)
+    let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCyc (solveEulerPath)

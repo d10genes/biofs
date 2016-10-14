@@ -53,6 +53,10 @@ module Parse =
 
 
 module Utils =
+    let keyF f k v = f k
+    let valF f k v = f v
+    let curry f a b = f (a,b)
+    let uncurry f (a,b) = f a b
     let (&&&) f g x = f x, g x
     let ( *** ) (f: 'a -> 'b) (g: 'c -> 'd) (x, y) = (f x, g y)
 
@@ -105,6 +109,8 @@ module Euler =
     let (><) f a b = f b a
 
     type Edge<'a> = ('a * 'a)
+    /// List of nodes and the nodes that they point to
+    type OutList<'a> = ('a * 'a list) list
     type EdgeList<'a> = Edge<'a> list
     type EdgeSet<'a when 'a: comparison> = Set<Edge<'a>>
     type EdgeMap<'a when 'a: comparison> = Map<'a, Set<Edge<'a>>>
@@ -118,11 +124,19 @@ module Euler =
 
     let unrollEmap (emap: EdgeMap<'a>): EdgeSet<'a> = emap |> Map.toSeq |> Seq.map snd |> Seq.reduce Set.union
     let emptyEmap (emap:EdgeMap<'a>): bool = emap |> unrollEmap |> Set.isEmpty
+    let nEdges em = em |> unrollEmap |> Set.count
 
     let tupsL2eM (xs: ('a * 'a list) list): EdgeMap<'a> =
         let tupL2Em (h, ys) =
             (h, (Set.map (fun x -> (h, x)) (Set.ofList ys)))
         xs |> List.map tupL2Em |> Map.ofList
+
+    let tupsL2eL (xs: ('a * 'a list) list) : EdgeList<'a> =
+        let rec tupL2El = function
+            | h, (y :: ys) -> (h, y) :: tupL2El (h, ys)
+            | h, [] -> []
+        List.collect tupL2El xs
+
     let pEulCycMap = pEulCyc |>> tupsL2eM
 
 
@@ -150,7 +164,14 @@ module Euler =
         let edges = emap.Item start
         Map.add start (edges.Remove (start, fin)) emap
 
+    let addEdge (emap: EdgeMap<'a>) (start, fin): EdgeMap<'a> =
+        match emap.TryFind start with
+        | Some edges ->  Map.add start (edges.Add (start, fin)) emap
+        | None ->  Map.add start (Set.ofList [(start, fin)]) emap
+
     let randCycle (start: 'a option) (emap: EdgeMap<'a>) =
+        printfn "%d edges" (nEdges emap)
+
         let startNode = defaultArg start (unrollEmap emap |> chooseNode)
         let rec randCycleR (em: EdgeMap<'a>) path node =
             match em.TryFind node |> ((><) defaultArg) Set.empty
@@ -189,3 +210,87 @@ module Euler =
         let pTest, _ = eulerCycle emTest
         let ``this should be cycle``() =
             Assert.AreEqual(pTest, [0; 3; 2; 4; 2; 1; 5; 1; 0])
+
+module EulerPath =
+    module DegreeMeasure =
+        // open Euler
+        open Utils
+
+        let rec length = function
+            | [] -> 0
+            | _ :: rst -> 1 + length rst
+
+        let slen xs = xs |> Set.toList |> length
+
+        let revTup (a, b) = (b, a)
+        let revEl el =
+            el |> tupsL2eL
+            |> List.map revTup
+            |> List.sortBy fst |> List.groupBy fst
+            |> List.map (fun (f, xs) -> (f, List.map snd xs))
+
+        let revMap (tl: OutList<'a>) = tl |> revEl |> tupsL2eM
+
+        let nEdges (n, edges) = slen edges
+
+        /// Union of keys of 2 maps
+        let allKs (m1: EdgeMap<'a>) (m2: EdgeMap<'a>) =
+            let keys m = m |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            keys m1 + keys m2
+
+        let inOutK (m1: EdgeMap<'a>) (m2: EdgeMap<'a>) (k: 'a) =
+            let getSize (m: EdgeMap<'a>) =
+                defaultArg (m.TryFind k) Set.empty |> slen
+            // (m1.TryFind k) |> slen, (m1.Item k) |> slen
+            getSize m1, getSize m2
+
+        /// Compare degrees of all nodes in 2 edgemaps
+        let inOutAll (m1: EdgeMap<'a>) (m2: EdgeMap<'a>) =
+            allKs m1 m2 |> Set.toList
+            |> List.map (id &&& (inOutK m1 m2))
+            |> Map.ofList
+
+        /// Given an outlist, return a map with out- and in-degree
+        /// of each node
+        let inAndOut (tl: OutList<'a>) =
+            let em1 = tupsL2eM tl
+            let em2 = revMap tl
+            inOutAll em1 em2
+
+        let imbalancedNodes degMap =
+            degMap
+            // |> Map.map (fun _ (x, y) -> x - y)
+            |> Map.map (valF (uncurry (-)))
+            // |> Map.filter (fun _ x -> x <> 0)
+            |> Map.filter (valF ( (<>) 0))
+
+    open DegreeMeasure
+    open Euler
+
+    let toCycle tl =
+        let em = tupsL2eM tl
+        let getUnevens xs =
+            xs |> inAndOut |> imbalancedNodes
+            |> Map.toList |> List.sortBy snd
+        let unevens =
+            match (getUnevens tl) with
+            | (endn, _) :: [(startn, _)] -> (endn, startn)
+            | _ -> failwith "Should have 2 uneven nodes"
+        addEdge em unevens, unevens
+
+    let unsplicePath (path: 'a list) ((endN, startN): Edge<'a>) =
+        let rec unsplicePathR (path_: 'a list) accumRev =
+            match path_ with
+            | a :: b :: rst ->
+                if (a = endN && b = startN)
+                then List.rev accumRev, rst
+                else unsplicePathR (b :: rst) (a :: accumRev)
+            | _ -> failwith "Nodes not found"
+        let xs, ys = unsplicePathR path []
+        startN :: ys @ xs.Tail @ [endN]
+
+    let eulerPath tl =
+        let em', xEdge = toCycle tl
+        let path, _ = eulerCycle em'
+        unsplicePath path xEdge
+
