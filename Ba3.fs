@@ -69,10 +69,7 @@ module Ba3d =
 module Ba3e =
     // Construct De Bruijn Graph from kmers
     open Bio.deBruijn
-
-    // let solveDbg  = grpDBG vals |> List.map dedupeTup |> showTups
     let solveDbg dnas = dnas |> grpDBG |> List.map dedupeTup |> showTups
-
     let Ba3e_main () = readWrite "data/ch3/rosalind_ba3e.txt" strandsD (solveDbg)
 
 
@@ -88,10 +85,8 @@ module Ba3f =
     let Ba3fMainFn fn = readWrite fn pEulCycMap (solveEulerCycle)
 
 
-// Doesn't work!
-// 1. choose node where outdegree > indegree
-// 2. choose edge that won't disconnect the graph
-//     - first need algorithm to detect connected graph
+/// Solve Eulerian path by first converting to and then
+/// from a cycle
 module Ba3g =
     open Bio.Euler
     open Bio.EulerPath
@@ -102,3 +97,4 @@ module Ba3g =
 
     // let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCycMap (solveEulerPath)
     let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCyc (solveEulerPath)
+    let Ba3gMainf fn = readWrite fn pEulCyc (solveEulerPath)

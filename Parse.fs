@@ -213,7 +213,7 @@ module Euler =
 
 module EulerPath =
     module DegreeMeasure =
-        // open Euler
+        open Euler
         open Utils
 
         let rec length = function
