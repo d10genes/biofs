@@ -60,12 +60,17 @@ module Utils =
     let (&&&) f g x = f x, g x
     let ( *** ) (f: 'a -> 'b) (g: 'c -> 'd) (x, y) = (f x, g y)
 
+    let recon xss =
+        let fst = xss |> List.head
+        let rst = xss |> List.tail |> List.map List.last
+        fst @ rst
+
     let kmers = Seq.windowed
     let kmerl k xs = Seq.windowed k xs |> Seq.map List.ofArray
-    let rec init = function
-        | [h] -> []
-        | h :: tl -> h :: init tl
-        | _ -> failwith "Empty list."
+    // let rec init = function
+    //     | [h] -> []
+    //     | h :: tl -> h :: init tl
+    //     | _ -> failwith "Empty list."
 
     let appFname fn suff =
         let fbase = Path.GetFileNameWithoutExtension fn
@@ -88,6 +93,27 @@ module Utils =
     let rec cartesian = function
         | [] -> Seq.singleton []
         | L::Ls -> cartesian Ls |> Seq.collect (fun c -> L |> Seq.map (fun x->x::c))
+
+    let init lst =
+        let rec loop revAcc = function
+            | [] -> failwith "empty list"
+            | hd::tl ->
+                match tl with
+                | [] -> List.rev revAcc
+                | _ -> loop (hd::revAcc) tl
+        loop [] lst
+
+    let lastElement ls = List.reduce (fun _ i -> i) ls
+
+    let zip l1 l2 =
+        let rec zip' l1 l2 accum =
+            match l1 with
+            | [] -> accum
+            | x1 :: l1s ->
+                match l2 with
+                | [] -> accum
+                | x2 :: l2s -> zip' l1s l2s ((x1, x2) :: accum)
+        zip' l1 l2 []
 
 
 module deBruijn =

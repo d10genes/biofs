@@ -24,11 +24,6 @@ module Ba3a =
 module Ba3b =
     let ppath = strandsD
 
-    let recon xss =
-        let fst = xss |> List.head
-        let rst = xss |> List.tail |> List.map List.last
-        fst @ rst
-
     let Ba3b_main () = readWrite "data/ch3/path.txt" ppath (recon >> dl2str)
 
 module Ba3c =
@@ -98,3 +93,20 @@ module Ba3g =
     // let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCycMap (solveEulerPath)
     let Ba3gMain () = readWrite "data/ch3/rosalind_ba3g.txt" pEulCyc (solveEulerPath)
     let Ba3gMainf fn = readWrite fn pEulCyc (solveEulerPath)
+
+/// String reconstruction problem
+module Ba3h =
+    open Bio.deBruijn
+    open Bio.EulerPath
+    let reconP = intWs .>>. strandsD
+
+    let stringRecon dnas =
+        dnas |> grpDBG |> List.map dedupeTup
+        |> eulerPath
+        |> recon
+
+    let solveReconstruction (_, dnas:seq<Nuke list>) =
+        stringRecon dnas
+        |> List.map showDna |> String.concat ""
+
+    let Ba3hMainf fn = readWrite fn reconP solveReconstruction
