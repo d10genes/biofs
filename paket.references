@@ -1,5 +1,6 @@
 fparsec
 NUnit
+FSharpx.Collections
 
 // group Test
 //   NUnit

@@ -1,6 +1,9 @@
 namespace Bio
 
 open FParsec
+open FSharpx.Collections
+open FSharpx.Collections.LazyList
+
 open System.IO
 
 type UserState = unit // doesn't have to be unit, of course
@@ -126,12 +129,14 @@ module deBruijn =
         |> List.sort |> List.groupBy fst
 
     let dedupeTup x = (fst &&& (snd >> List.map snd)) x
+    let deBruijn xss = xss |> grpDBG |> List.map dedupeTup
     let showTup k = k |> (dl2str *** (List.map dl2str >> String.concat ","))
                     |> (fun (x, y) -> String.concat " -> " [|x; y|])
     let showTups ks = List.map showTup ks |> String.concat "\n"
 
 module Euler =
     open Parse
+
     let (><) f a b = f b a
 
     type Edge<'a> = ('a * 'a)
@@ -150,6 +155,37 @@ module Euler =
 
     let unrollEmap (emap: EdgeMap<'a>): EdgeSet<'a> = emap |> Map.toSeq |> Seq.map snd |> Seq.reduce Set.union
     let emptyEmap (emap:EdgeMap<'a>): bool = emap |> unrollEmap |> Set.isEmpty
+
+    // let emptyMap (m:Map<'a,Set<'b>>) =
+    //     let sets = m |> Map.toSeq |> LazyList.ofSeq
+    //             |> LazyList.map snd
+    //     let rec allEmpty (ll: LazyList<Set<'b>>) =
+    //         match ll with
+    //         | Nil -> true
+    //         | Cons(h, t) ->
+    //             if not (Set.isEmpty h)
+    //             then false
+    //             else allEmpty t
+    //     allEmpty sets
+
+    let chooseFstSetVal (m:Map<'a,Set<'b>>) =
+        let setGet s = s |> Set.toSeq |> Seq.head
+        let sets = m |> Map.toSeq |> LazyList.ofSeq
+                |> LazyList.map snd
+        let rec allEmpty (ll: LazyList<Set<'b>>) =
+            match ll with
+            | Nil -> None
+            | Cons(s, t) ->
+                if not (Set.isEmpty s)
+                then Some (setGet s)
+                else allEmpty t
+        allEmpty sets
+
+    let emptyMap (m:Map<'a,Set<'b>>) =
+        match chooseFstSetVal m with
+        | Some _ -> false
+        | None -> true
+
     let nEdges em = em |> unrollEmap |> Set.count
 
     let tupsL2eM (xs: ('a * 'a list) list): EdgeMap<'a> =
@@ -186,6 +222,10 @@ module Euler =
         | y :: _ -> Some y
         | [] -> None
 
+    // let chooseEdgeMap (edgeCands: EdgeSet<'a>): Option<Edge<'a>> =
+    //     match Set.toList edgeCands with
+    //     | y :: _ -> Some y
+    //     | [] -> None
     let remove (emap: EdgeMap<'a>) (start, fin): EdgeMap<'a> =
         let edges = emap.Item start
         Map.add start (edges.Remove (start, fin)) emap
@@ -196,9 +236,17 @@ module Euler =
         | None ->  Map.add start (Set.ofList [(start, fin)]) emap
 
     let randCycle (start: 'a option) (emap: EdgeMap<'a>) =
-        printfn "%d edges" (nEdges emap)
+        // printfn "%d edges" (nEdges emap)
 
-        let startNode = defaultArg start (unrollEmap emap |> chooseNode)
+        let startNode =
+            match start with
+            | Some n -> n
+            | None ->
+                match chooseFstSetVal emap  with
+                | Some (a, b) -> a
+                | None -> failwith "No start node, and emap is empty!"
+
+        // let startNode = defaultArg start (unrollEmap emap |> chooseNode)
         let rec randCycleR (em: EdgeMap<'a>) path node =
             match em.TryFind node |> ((><) defaultArg) Set.empty
                 |> chooseEdge with
@@ -217,14 +265,17 @@ module Euler =
             else x :: splice subl xs
 
     let eulerCycle (emap_: EdgeMap<'a>) =
-        let rec whileCycle path emap  =
-            if emptyEmap emap
+        let ne = nEdges emap_
+        printfn "Starting with %d edges" (nEdges emap_)
+        let rec whileCycle path emap totalL =
+            printfn "Path length: %d / %d" totalL ne
+            if emptyMap emap
             then path, emap
             else
                 let path', emap' = randCycle None emap
-                whileCycle (splice path' path) emap'
+                whileCycle (splice path' path) emap' (totalL + path'.Length - 1)
         let rp, re = randCycle None emap_
-        whileCycle rp re
+        whileCycle rp re 0
 
     module EulerTest =
         open NUnit.Framework
@@ -319,4 +370,26 @@ module EulerPath =
         let em', xEdge = toCycle tl
         let path, _ = eulerCycle em'
         unsplicePath path xEdge
+
+module kUniversal =
+    open deBruijn
+    open Euler
+    open Utils
+    let path2circle (xs: 'a list) =
+        let sx = List.rev xs
+        let rec nCommon xs ys n =
+            match (xs, ys) with
+            | [], _ -> n
+            | _, [] -> n
+            | (x :: _), (y :: _) when x <> y -> n
+            | (x :: xss), (y :: yss) ->  nCommon xss yss (n + 1)
+
+        let n = nCommon xs sx 0
+        // n
+        sx |> List.skip n |> List.rev
+
+    let kmers2circ' kmers = kmers |> deBruijn |> tupsL2eM |> eulerCycle |> fst |> List.map List.head
+    let k2circ k = List.replicate k [0; 1] |> cartesian |> kmers2circ' |> path2circle
+
+
 

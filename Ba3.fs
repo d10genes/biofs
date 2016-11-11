@@ -95,6 +95,7 @@ module Ba3g =
     let Ba3gMainf fn = readWrite fn pEulCyc (solveEulerPath)
 
 /// String reconstruction problem
+/// Basically, genomePath(EulerianPath(DeBruijnGraph(kmers)))
 module Ba3h =
     open Bio.deBruijn
     open Bio.EulerPath
@@ -110,3 +111,12 @@ module Ba3h =
         |> List.map showDna |> String.concat ""
 
     let Ba3hMainf fn = readWrite fn reconP solveReconstruction
+
+// K Universal string
+module Ba3i =
+    open Bio.kUniversal
+    let kP = intWs
+    let solveKUniversalString k =
+        k2circ k |> List.map (fun x -> x.ToString()) |> String.concat ""
+    let Ba3iMainf fn = readWrite fn kP solveKUniversalString
+    // Ba3iMainf "data/ch3/universal_string.16.txt"
