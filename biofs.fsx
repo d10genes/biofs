@@ -24,37 +24,74 @@ open Bio.kUniversal
 open FSharpx.Collections
 open FSharpx.Collections.LazyList
 
+open Bio.GapPatterns
 // Generate the (3,2)-mer composition of TAATGCCATGGGATGTT in
 // lexicographic order. Include repeats, and return your
 // answer as a list on a single line.
 let s = "TAATGCCATGGGATGTT"
 let ls = LazyList.ofSeq s
-let singleton x = LazyList.cons x LazyList.empty
-let kdmer (xs: seq<'a>) (k:int) (d:int) =
-    let rec kdmer' (k1: LazyList<'a>) (gap: LazyList<'a>)
-        (k2: LazyList<'a>) (rst: LazyList<'a>) (accum)=
-        match rst with
-        | Nil -> accum
-        | Cons(nxt, rst') ->
-            let k1' = LazyList.append k1.Tail (singleton gap.Head)
-            let gap' = LazyList.append gap.Tail (singleton k2.Head)
-            let k2' = LazyList.append k2.Tail (singleton nxt)
-            kdmer' k1' gap' k2' rst' (cons (k1', gap', k2') accum)
 
-    let k1, rk1 = Seq.take k xs, Seq.skip k xs
-    let g, rg = Seq.take d rk1, Seq.skip d rk1
-    let k2, _ = Seq.take k rg, Seq.skip k rg
-    kdmer' (LazyList.ofSeq k1) (LazyList.ofSeq g) (LazyList.ofSeq k2)
-        (LazyList.ofSeq xs) LazyList.empty
-let llToStr (xs: LazyList<char>) = xs |> LazyList.map string |> String.concat ""
-let kdmerStr (xs) (k:int) (d:int) =
-    kdmer xs k d
-        |> LazyList.map (fun (x, _, y) -> llToStr x, llToStr y)
-        |> LazyList.toList |> List.sort
+// StringSpelledByGappedPatterns
 
-let showKdmers xs =
-    List.map (fun (x, y) -> String.concat "|" [x; y]) xs
-    |> String.concat ","
+// 1. parse
+let inp = """4 2
+GACC|GCGC
+ACCG|CGCC
+CCGA|GCCG
+CGAG|CCGG
+GAGC|CGGA
+"""
+
+let (Success(((k, d), dnas), _, _)) = run (gappedPatP) inp
+
+
+let l2tup = function
+    | (x :: [y]) -> (x, y)
+    | l -> failwithf "Need list of 2 elements. Input had %d" (List.length l)
+
+let pDNA1 = many1 nucleotide
+let barSepStr = (sepBy1 pDNA1 (pchar '|')) |>> l2tup
+let barSepStrs = (sepEndBy barSepStr nl)
+let gappedPatP = intWs .>>. intWs .>>. barSepStrs
+let (Success(((k, d), dnas), _, _)) = run (gappedPatP) inp
+
+dnas
+
+// 2. Stitch sequences
+
+let fsts = List.map fst dnas
+let snds = List.map snd dnas
+
+
+
+let Ba3jMainf fn = readWrite fn gappedPatP solveGappedPatterns
+Ba3jMainf "data/ch3/dataset_6206_7.txt"
+
+solveGappedPatterns
+stitchZip fsts snds 2
+
+let xs, ys = stitchZip fsts snds 2
+
+
+
+// let filePath = "data/ch3/rosalind_ba3j.txt"
+// let sq = System.IO.File.ReadLines(filePath)
+// let inp2 = String.concat "\n" sq
+// let (Success(((k, d), dnas), _, _)) = run (gappedPatP) inp2
+// solveGappedPatterns ((k, d), dnas)
+
+eqWhile (List.skip 3 xs) ys
+
+List.take 6 xs
+List.skip 6 xs
+
+ch2str xs
+ch2str ys
+xs
+ys
+String.concat "" xs
+stitch fsts
+
 
 kdmerStr s 3 2 |> showKdmers |> printf "%A"
 

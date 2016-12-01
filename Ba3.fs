@@ -120,3 +120,18 @@ module Ba3i =
         k2circ k |> List.map (fun x -> x.ToString()) |> String.concat ""
     let Ba3iMainf fn = readWrite fn kP solveKUniversalString
     // Ba3iMainf "data/ch3/universal_string.16.txt"
+
+module Ba3j =
+    open Bio.GapPatterns
+    let solveGappedPatterns ((k, d), strands) =
+        let fsts = List.map fst strands
+        let snds = List.map snd strands
+        let res = stitchZip fsts snds k d
+        res |> ch2str
+    let Ba3jMainf fn = readWrite fn gappedPatP solveGappedPatterns
+    // TODO: check parser type error; perform on rosalind set
+    // Ba3jMainf "data/ch3/dataset_6206_7.txt"
+
+
+    // Note: parsing issue; must cut off trailing newline with
+    // `perl -pi -e 'chomp if eof' $fn`
