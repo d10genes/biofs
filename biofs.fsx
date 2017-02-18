@@ -24,10 +24,11 @@ open Bio.kUniversal
 open FSharpx.Collections
 open FSharpx.Collections.LazyList
 
-open Bio.GapPatterns
-// Generate the (3,2)-mer composition of TAATGCCATGGGATGTT in
-// lexicographic order. Include repeats, and return your
-// answer as a list on a single line.
+// open Bio.GapPatterns
+
+open Ba3.Ba3j
+Ba3jMainf "data/ch3/rosalind_ba3j.txt"
+
 let s = "TAATGCCATGGGATGTT"
 let ls = LazyList.ofSeq s
 
@@ -41,13 +42,14 @@ CCGA|GCCG
 CGAG|CCGG
 GAGC|CGGA
 """
-
 let (Success(((k, d), dnas), _, _)) = run (gappedPatP) inp
 
+let barSepStrs = (sepEndBy barSepStr nl)
+let gappedPatP = intWs .>>. intWs .>>. barSepStrs
 
-let l2tup = function
-    | (x :: [y]) -> (x, y)
-    | l -> failwithf "Need list of 2 elements. Input had %d" (List.length l)
+
+
+l2tup [1]
 
 let pDNA1 = many1 nucleotide
 let barSepStr = (sepBy1 pDNA1 (pchar '|')) |>> l2tup

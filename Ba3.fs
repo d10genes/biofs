@@ -121,7 +121,8 @@ module Ba3i =
     let Ba3iMainf fn = readWrite fn kP solveKUniversalString
     // Ba3iMainf "data/ch3/universal_string.16.txt"
 
-module Ba3j =
+// Gap patterns
+module Ba3j_a =
     open Bio.GapPatterns
     let solveGappedPatterns ((k, d), strands) =
         let fsts = List.map fst strands
